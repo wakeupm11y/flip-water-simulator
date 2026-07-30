@@ -1,71 +1,102 @@
 package com.mmahlatji.flipwatersim.Solver;
 
-
 import com.mmahlatji.flipwatersim.Boundaries.Boundary;
 import com.mmahlatji.flipwatersim.HashTable.SpatialHashTable;
-import com.mmahlatji.flipwatersim.Particles.Particle;
+import java.util.Arrays;
 
 public class Solver {
-    private static final Vector2D GRAVITY = new Vector2D(0, 9.81f * 50f);
+    // private static final Vector2D GRAVITY = new Vector2D(0, 9.81f * 50f);
+    private static final float GRAVITY = 9.81f * 50f;
+    private static final float RADIUS = 3f; // make final for testing purposes, consider making it configurable
+    private static final float MASS = 1f;
 
     private final SpatialHashTable table;
     private final Boundary boundary;
-    private final Particle[] particles;
+    // private final Particle[] particles;
+    private final float[] velocityX;
+    private final float[] velocityY;
+    private final float[] positionX;
+    private final float[] positionY;
+    // private final float[] mass;
+    // private final float[] radius;  // we probably do not need this because we can just make it a constant for each particle
     private final Grid grid;
     private final float timestep;
     private final float overrelaxation;
     private final int relaxationIterations;
     private final int pushApartIterations;
+    private final int numParticles;
 
     private final float[] initX;
     private final float[] initY;
 
-    public Solver(final Particle[] particles, final Grid grid, final Boundary boundary,
+    public Solver(final int numParticles, final Grid grid, final Boundary boundary,
                      final float overrelaxation, final int relaxationIterations,
                      final int pushApartIterations, final float timestep) {
-        this.particles = particles;
+
+
+        // this.particles = particles;
         this.grid      = grid;
+        this.numParticles = numParticles;
         this.boundary  = boundary;
         this.overrelaxation = overrelaxation;
         this.relaxationIterations = relaxationIterations;
         this.pushApartIterations = pushApartIterations;
         this.timestep  = timestep;
-        this.table = new SpatialHashTable(grid.getCellSize(), particles.length);
+        this.velocityX = new float[numParticles];
+        this.velocityY = new float[numParticles];
+        this.positionX = new float[numParticles];
+        this.positionY = new float[numParticles];
 
-        initX = new float[particles.length];
-        initY = new float[particles.length];
-        for (int i = 0; i < particles.length; i++) {
-            initX[i] = particles[i].getPosition().getX();
-            initY[i] = particles[i].getPosition().getY();
+        this.table = new SpatialHashTable(grid.getCellSize(), numParticles);
+
+        initX = new float[numParticles];
+        initY = new float[numParticles];
+        for (int i = 0; i < numParticles; i++) {
+            initX[i] = positionX[i];
+            initY[i] = positionY[i];
         }
     }
 
+    
+
     public void reset() {
-        for (int i = 0; i < particles.length; i++) {
-            particles[i].setPosition(new Vector2D(initX[i], initY[i]));
-            particles[i].setVelocity(new Vector2D(0f, 0f));
+        for (int i = 0; i < numParticles; i++) {
+            positionX[i] = initX[i];
+            positionY[i] = initY[i];
         }
+        Arrays.fill(velocityX, 0);
+        Arrays.fill(velocityY, 0);
         grid.clearCurrent();
     }
 
     public void update() {
 
-        for (Particle p : particles) {
-            Vector2D vel = p.getVelocity().add(GRAVITY.scale(timestep));
-            p.setVelocity(vel);
+        // for (Particle p : particles) {
+        //     Vector2D vel = p.getVelocity().add(GRAVITY.scale(timestep));
+        //     p.setVelocity(vel);
+        // }
+
+        for (int i = 0; i < numParticles; i++) {
+            velocityX[i] += GRAVITY * timestep;
+            velocityY[i] += GRAVITY * timestep;   
         }
         
-        table.create(particles);
+        table.create(positionX, positionY);
 
         pushParticlesApart(pushApartIterations);
         particlesToGrid();
         solvePressure(relaxationIterations);
         gridToParticle();
 
-        for (Particle p : particles) {
-            Vector2D pos = p.getPosition().add(p.getVelocity().scale( timestep));
-            p.setPosition(pos);
-            boundary.apply(p);
+        // for (Particle p : particles) {
+        //     Vector2D pos = p.getPosition().add(p.getVelocity().scale( timestep));
+        //     p.setPosition(pos);
+        //     boundary.apply(p); // modify this so that it accepts coordinates, not a vector
+        // }
+        for (int i = 0; i < numParticles; i++) {
+            positionX[i] += velocityX[i] * timestep;
+            positionY[i] += velocityY[i] * timestep;
+            // apply boundary(posxArr, posYArr, index)
         }
     }
 
@@ -75,9 +106,9 @@ public class Solver {
         float cs = grid.getCellSize();
         boundary.markBoundary(grid);
         // 2. Mark fluid cells based on particle positions
-        for (Particle p : particles) {
-            float px = p.getPosition().getX();
-            float py = p.getPosition().getY();
+        for (int i = 0; i < numParticles; i++) {
+            float px = positionX[i];
+            float py = positionY[i];
             int xi = (int) Math.floor(px / cs);
             int yi = (int) Math.floor(py / cs);
             // Clamp to valid cell indices
@@ -91,11 +122,11 @@ public class Solver {
         }
 
         // 3. Transfer velocities from particles to grid faces
-        for (Particle p : particles) {
-            float px = p.getPosition().getX();
-            float py = p.getPosition().getY();
-            float vx = p.getVelocity().getX();
-            float vy = p.getVelocity().getY();
+        for (int i = 0; i < numParticles; i++) {
+            float px = positionX[i];
+            float py = positionY[i];
+            float vx = velocityX[i];
+            float vy = velocityY[i];
 
             // ---- Horizontal velocity (u) ----
             int x0 = (int) Math.floor(px / cs);
@@ -223,9 +254,9 @@ public class Solver {
 
     private void gridToParticle() {
         float cs = grid.getCellSize();
-        for (Particle p : particles) {
-            float px = p.getPosition().getX();
-            float py = p.getPosition().getY();
+        for (int i = 0; i < numParticles; i++) {
+            float px = positionX[i];
+            float py = positionY[i];
 
             // ---- Horizontal interpolation ----
             int x0 = (int) Math.floor(px / cs);
@@ -302,54 +333,47 @@ public class Solver {
                 sumW += w4;
             }
             if (sumW > 1e-12) newVy /= sumW;
-
-            p.setVelocity(new Vector2D(newVx,  newVy));
+            velocityX[i] = newVx;
+            velocityY[i] = newVy;
         }
     }
 
     private void pushParticlesApart(int iterations) {
-        float minDist = (float) particles[0].getRadius() * 2; 
+        float minDist = RADIUS * 2f; 
 
         for (int z = 0; z < iterations; z++) {
-            for (int i = 0; i < particles.length; i++) {
-                Particle outerParticle = particles[i];
-                table.query(outerParticle, (int) (minDist + 0.01f));
+            for (int i = 0; i < numParticles; i++) {
+                // outer particle
+                float pXi = positionX[i];
+                float pYi = positionY[i];
+                table.query(pXi, pYi, (int) (minDist + 0.01f));
 
                 int[] queries = table.getQueryIds();
                 for (int q = 0; q < table.getQuerySize(); q++) {
                     int j = queries[q];
 
                     if (i >= j) continue;
-
-                    Particle innerParticle = particles[j];
+                    // inner particle
+                    float pXj = positionX[j];
+                    float pYj = positionY[j];
                     
-                    float distance = outerParticle.getPosition().distance(innerParticle.getPosition());
+                    float distance = (float) Math.sqrt(Math.pow(pXj - pXi, 2) + Math.pow(pYj - pYi, 2));
 
                     if (distance >= minDist || distance == 0) continue;
 
                     if (distance < minDist) {
                         double scaleFactor = (0.5 * (minDist - distance))/ distance;
                         float correctionFactor = (float) (distance * scaleFactor);
-                        Vector2D corrected = (outerParticle.getPosition().sub(innerParticle.getPosition()).scale(correctionFactor));
+                        float correctX = (pXi - pXj) * correctionFactor;
+                        float correctY = (pYi - pYj) * correctionFactor;
 
-                        outerParticle.setPosition(outerParticle.getPosition().sub(corrected));
-                        innerParticle.setPosition(innerParticle.getPosition().add(corrected));
+                        positionX[i] -= correctX;
+                        positionY[i] -= correctY;
+                        positionX[j] += correctX;
+                        positionY[j] += correctY;
                     }   
                 }
             }
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
