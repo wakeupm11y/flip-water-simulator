@@ -1,8 +1,8 @@
 package com.mmahlatji.flipwatersim.HashTable;
 
 import java.util.Arrays;
-import com.mmahlatji.flipwatersim.Solver.*;
-import com.mmahlatji.flipwatersim.Particles.Particle;
+// import com.mmahlatji.flipwatersim.Solver.*;
+// import com.mmahlatji.flipwatersim.Particles.Particle;
 
 public class SpatialHashTable {
     
@@ -54,20 +54,20 @@ public class SpatialHashTable {
         return (int) Math.floor(coord / spacing);
     }
 
-    public int hashPos(Vector2D pos) {
-        return hashCoords(intCoords(pos.getX()), intCoords(pos.getY()));
+    public int hashPos(float x, float y) {
+        return hashCoords(intCoords(x), intCoords(y));
     }
 
-    public void create(Particle[] particles) {
-        int numObjects = particles.length;
+    public void create(float[] posX, float[] posY) {
+        int numParticles = posX.length;
 
         // reset everything
         Arrays.fill(this.cellStart, 0);
         Arrays.fill(this.cellEntries, 0);
 
         // Count the particles per cell
-        for (Particle particle: particles) {
-            int hash = hashPos(particle.getPosition());
+        for (int i = 0; i < numParticles; i++) {
+            int hash = hashPos(posX[i], posY[i]);
             this.cellStart[hash]++;
         }
 
@@ -80,19 +80,19 @@ public class SpatialHashTable {
         this.cellStart[this.tableSize] = start;
 
         // do the mapping
-        for (int i = 0; i < numObjects; i++) {
-            int h = hashPos(particles[i].getPosition());
+        for (int i = 0; i < numParticles; i++) {
+            int h = hashPos(posX[i], posY[i]);
             this.cellStart[h]--;
             this.cellEntries[this.cellStart[h]] = i;
         }
     }
 
-    public void query(Particle particle, int maxDist) {
-        int x0 = intCoords(particle.getPosition().getX() - maxDist);
-        int y0 = intCoords(particle.getPosition().getY() - maxDist);
+    public void query(float posX, float posY, int maxDist) {
+        int x0 = intCoords(posX - maxDist);
+        int y0 = intCoords(posY- maxDist);
 
-        int x1 = intCoords(particle.getPosition().getX() + maxDist);
-        int y1 = intCoords(particle.getPosition().getY() + maxDist);
+        int x1 = intCoords(posX + maxDist);
+        int y1 = intCoords(posY + maxDist);
         
         this.querySize = 0; // reset the number of queries
 
