@@ -7,7 +7,7 @@ import java.util.Arrays;
 public class Solver {
     // private static final Vector2D GRAVITY = new Vector2D(0, 9.81f * 50f);
     private static final float GRAVITY = 9.81f * 50f;
-    private static final float RADIUS = 3f; // make final for testing purposes, consider making it configurable
+    public static final float RADIUS = 3f; // make final for testing purposes, consider making it configurable
     private static final float MASS = 1f;
 
     private final SpatialHashTable table;

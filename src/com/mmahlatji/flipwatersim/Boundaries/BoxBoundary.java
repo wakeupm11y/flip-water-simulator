@@ -2,7 +2,6 @@ package com.mmahlatji.flipwatersim.Boundaries;
 
 import com.mmahlatji.flipwatersim.Solver.Grid;
 import com.mmahlatji.flipwatersim.Solver.Vector2D;
-import com.mmahlatji.flipwatersim.Particles.Particle;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
@@ -55,53 +54,55 @@ public class BoxBoundary implements Boundary {
     }
     
     @Override
-    public void apply(Particle particle) {
-        Vector2D pos = particle.getPosition();
-        Vector2D vel = particle.getVelocity();
-        float radius = (float) particle.getRadius();
+    public void apply(float[] posX, float[] posY, float[] velX, float[] velY, int index) {
+        float pX = posX[index];
+        float pY = posY[index];
+        float vX = velX[index];
+        float vY = velY[index];
+        float radius = com.mmahlatji.flipwatersim.Solver.Solver.RADIUS;
         
-        float x = pos.getX();
-        float y = pos.getY();
-        float vx = vel.getX();
-        float vy = vel.getY();
+      
         
         boolean bounced = false;
         
         // Left wall
-        if (x - radius < minX) {
-            x = minX + radius;
-            vx = -vx * restitution;
+        if (pX - radius < minX) {
+            pX = minX + radius;
+            vX = -vX * restitution;
             bounced = true;
         }
         
         // Right wall
-        if (x + radius > maxX) {
-            x = maxX - radius;
-            vx = -vx * restitution;
+        if (pX + radius > maxX) {
+            pX = maxX - radius;
+            vX= -vX * restitution;
             bounced = true;
         }
         
         // Bottom wall
-        if (y - radius < minY) {
-            y = minY + radius;
-            vy = -vy * restitution;
+        if (pY - radius < minY) {
+            pY= minY + radius;
+            vY = -vY * restitution;
             bounced = true;
         }
         
         // Top wall
-        if (y + radius > maxY) {
-            y = maxY - radius;
-            vy = -vy * restitution;
+        if (pY + radius > maxY) {
+            pY = maxY - radius;
+            vY = -vY * restitution;
             bounced = true;
         }
         
         if (bounced) {
             // Apply slight damping to prevent infinite bouncing
-            if (Math.abs(vx) < 0.01f) vx = 0;
-            if (Math.abs(vy) < 0.01f) vy = 0;
+            if (Math.abs(vX) < 0.01f) vX = 0;
+            if (Math.abs(vY) < 0.01f) vY = 0;
+
+            posX[index] = pX;
+            posY[index] = pY;
+            velX[index] = vX;
+            velY[index] = vY;
             
-            particle.setPosition(new Vector2D(x, y));
-            particle.setVelocity(new Vector2D(vx, vy));
         }
     }
 
@@ -187,7 +188,7 @@ public class BoxBoundary implements Boundary {
      * @param y Y coordinate of the point
      * @return true if the point is inside the boundary
      */
-    public boolean contains(float x, float y) {
+    public boolean boundaryContainsPoint(float x, float y) {
         return x >= minX && x <= maxX && y >= minY && y <= maxY;
     }
     
@@ -197,12 +198,11 @@ public class BoxBoundary implements Boundary {
      * @param particle The particle to check
      * @return true if the particle is inside the boundary
      */
-    public boolean contains(Particle particle) {
-        Vector2D pos = particle.getPosition();
-        float radius = (float) particle.getRadius();
-        return pos.getX() - radius >= minX && 
-               pos.getX() + radius <= maxX &&
-               pos.getY() - radius >= minY && 
-               pos.getY() + radius <= maxY;
+    public boolean boundaryContainsParticle(float x, float y) {
+        float radius = com.mmahlatji.flipwatersim.Solver.Solver.RADIUS;
+        return x - radius >= minX && 
+               x + radius <= maxX &&
+               y - radius >= minY && 
+               y+ radius <= maxY;
     }
 }
