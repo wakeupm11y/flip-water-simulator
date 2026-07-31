@@ -1,7 +1,6 @@
 package com.mmahlatji.flipwatersim.Boundaries;
 
 import com.mmahlatji.flipwatersim.Solver.Grid;
-import com.mmahlatji.flipwatersim.Solver.Vector2D;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
@@ -178,7 +177,6 @@ public class BoxBoundary implements Boundary {
     public float getHeight() { return maxY - minY; }
     public float getCenterX() { return (minX + maxX) / 2; }
     public float getCenterY() { return (minY + maxY) / 2; }
-    public Vector2D getCenter() { return new Vector2D(getCenterX(), getCenterY()); }
     public float getRestitution() { return restitution; }
     
     /**

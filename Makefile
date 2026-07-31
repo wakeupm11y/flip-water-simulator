@@ -3,7 +3,7 @@ JAVAC = javac
 JAVA = java
 SRC_DIR = src
 BIN_DIR = bin
-MAIN_CLASS = com.mmahlatji.flipwatersim.Gui.Frame
+MAIN_CLASS = com.mmahlatji.flipwatersim
 
 # Default target: compile all java files
 all:
@@ -12,7 +12,7 @@ all:
 
 # Run the application
 run: all
-	$(JAVA) -cp $(BIN_DIR) $(MAIN_CLASS)
+	$(JAVA) -cp $(BIN_DIR) Main
 
 # Clean up build artifacts
 clean:

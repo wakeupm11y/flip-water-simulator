@@ -29,9 +29,17 @@ public class Solver {
     private final float[] initX;
     private final float[] initY;
 
-    public Solver(final int numParticles, final Grid grid, final Boundary boundary,
-                     final float overrelaxation, final int relaxationIterations,
-                     final int pushApartIterations, final float timestep) {
+    public Solver(
+        final int numParticles, 
+        final Grid grid, 
+        final Boundary boundary,
+        final float[] positionX,
+        final float[] positionY,
+        final float overrelaxation, 
+        final int relaxationIterations,
+        final int pushApartIterations, 
+        final float timestep
+    ) {
 
 
         // this.particles = particles;
@@ -44,8 +52,8 @@ public class Solver {
         this.timestep  = timestep;
         this.velocityX = new float[numParticles];
         this.velocityY = new float[numParticles];
-        this.positionX = new float[numParticles];
-        this.positionY = new float[numParticles];
+        this.positionX = positionX;
+        this.positionY = positionY;
 
         this.table = new SpatialHashTable(grid.getCellSize(), numParticles);
 
@@ -96,7 +104,7 @@ public class Solver {
         for (int i = 0; i < numParticles; i++) {
             positionX[i] += velocityX[i] * timestep;
             positionY[i] += velocityY[i] * timestep;
-            // apply boundary(posxArr, posYArr, index)
+            boundary.apply(positionX, positionY, velocityX, velocityY, i);
         }
     }
 
@@ -375,5 +383,17 @@ public class Solver {
                 }
             }
         }
+    }
+
+    public float[] getPositionX() {
+    return positionX;
+    }
+
+    public float[] getPositionY() {
+        return positionY;
+    }
+
+    public int getNumParticles() {
+        return numParticles;
     }
 }
