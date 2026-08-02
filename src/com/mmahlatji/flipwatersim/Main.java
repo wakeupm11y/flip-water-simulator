@@ -19,8 +19,8 @@ public class Main {
         // 1. Define Boundary Box (in world units/meters)
         float minX = 0.0f;
         float minY = 0.0f;
-        float maxX = 3.0f;
-        float maxY = 2.0f;
+        float maxX = 800f;
+        float maxY = 600f;
 
         Boundary boundary = new BoxBoundary(minX, minY, maxX, maxY, Color.BLACK, 0.0f);
 
@@ -35,7 +35,7 @@ public class Main {
             tankHeight, 
             res, 
             0.4f, // relWaterWidth (40% of box width)
-            0.8f  // relWaterHeight (80% of box height)
+            0.6f  // relWaterHeight (80% of box height)
         );
 
         // 3. Offset Particle Coordinates by Boundary Origin (minX, minY)
@@ -55,7 +55,7 @@ public class Main {
             setup.posX,
             setup.posY,
             1.9f,            // overrelaxation
-            40,              // pressure iterations
+            10,              // pressure iterations
             2,               // push-apart iterations
             1.0f / 60.0f     // timestep dt
         );
@@ -65,7 +65,7 @@ public class Main {
             JFrame frame = new JFrame("FLIP Fluid Simulation");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-            SimulationPanel panel = new SimulationPanel(solver, boundary,
+            SimulationPanel panel = new SimulationPanel(solver,
                     minX, minY, maxX, maxY);
             frame.add(panel);
 

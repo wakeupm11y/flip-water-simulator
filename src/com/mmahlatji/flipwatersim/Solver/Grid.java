@@ -75,6 +75,8 @@ public class Grid {
         return v.length;
     }
     public int cellIndex(int x, int y) {
+        x = Math.max(0, Math.min(x, numX - 1));
+        y = Math.max(0, Math.min(y, numY - 1));
         return x * numY + y;
     }
     

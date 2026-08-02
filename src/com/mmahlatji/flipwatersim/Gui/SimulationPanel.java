@@ -18,7 +18,6 @@ import javax.swing.SwingUtilities;
 public class SimulationPanel extends JPanel implements Runnable {
 
     private final Solver solver;
-    private final Boundary boundary;
     private final float minX, minY, maxX, maxY;
     private volatile boolean running = true;
     private int fps = 0;
@@ -27,10 +26,14 @@ public class SimulationPanel extends JPanel implements Runnable {
     private Thread simThread;
     private static final int TARGET_FPS = 60;
 
-    public SimulationPanel(Solver solver, Boundary boundary,
-                           float minX, float minY, float maxX, float maxY) {
+    public SimulationPanel(
+        Solver solver,
+        float minX,
+        float minY,
+        float maxX,
+        float maxY
+    ) {
         this.solver = solver;
-        this.boundary = boundary;
         this.minX = minX;
         this.minY = minY;
         this.maxX = maxX;

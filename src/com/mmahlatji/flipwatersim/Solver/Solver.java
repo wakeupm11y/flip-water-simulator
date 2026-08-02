@@ -7,7 +7,7 @@ import java.util.Arrays;
 public class Solver {
     // private static final Vector2D GRAVITY = new Vector2D(0, 9.81f * 50f);
     private static final float GRAVITY = 9.81f * 50f;
-    public static final float RADIUS = 3f; // make final for testing purposes, consider making it configurable
+    public static final float RADIUS = 1f; // make final for testing purposes, consider making it configurable
     private static final float MASS = 1f;
 
     private final SpatialHashTable table;
@@ -85,7 +85,6 @@ public class Solver {
         // }
 
         for (int i = 0; i < numParticles; i++) {
-            velocityX[i] += GRAVITY * timestep;
             velocityY[i] += GRAVITY * timestep;   
         }
         
@@ -213,8 +212,8 @@ public class Solver {
 
     private void solvePressure(int iterations) {
         for (int iter = 0; iter < iterations; iter++) {
-            for (int i = 1; i < grid.getNumX() - 1; i++) {
-                for (int j = 1; j < grid.getNumY() - 1; j++) {
+            for (int i = 0; i < grid.getNumX() - 1; i++) {
+                for (int j = 0; j < grid.getNumY() - 1; j++) {
                     int type = grid.getCellType(grid.cellIndex(i, j));
                     if (type == Grid.AIR || type == Grid.SOLID) continue;
 
@@ -370,15 +369,16 @@ public class Solver {
                     if (distance >= minDist || distance == 0) continue;
 
                     if (distance < minDist) {
-                        double scaleFactor = (0.5 * (minDist - distance))/ distance;
-                        float correctionFactor = (float) (distance * scaleFactor);
-                        float correctX = (pXi - pXj) * correctionFactor;
-                        float correctY = (pYi - pYj) * correctionFactor;
+                        float dx = pXi - pXj;
+                        float dy = pYi - pYj;
+                        float delta = 0.5f * (minDist - distance) / distance;
+                        float correctX = dx * delta;
+                        float correctY = dy * delta;
 
-                        positionX[i] -= correctX;
-                        positionY[i] -= correctY;
-                        positionX[j] += correctX;
-                        positionY[j] += correctY;
+                        positionX[i] += correctX;
+                        positionY[i] += correctY;
+                        positionX[j] -= correctX;
+                        positionY[j] -= correctY;
                     }   
                 }
             }

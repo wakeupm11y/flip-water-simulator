@@ -10,7 +10,7 @@ public class SpatialHashTable {
     private final int tableSize;
     private final int[] cellStart;
     private final int[] cellEntries;
-    private final int[] queryIds;
+    private int[] queryIds;
     private int querySize;
     
     public SpatialHashTable(float spacing, int maxObjects) {
@@ -18,7 +18,7 @@ public class SpatialHashTable {
         this.tableSize = 2*maxObjects;
         this.cellStart = new int[this.tableSize + 1];
         this.cellEntries = new int[maxObjects];
-        this.queryIds = new int[Math.max(maxObjects, 64)];
+        this.queryIds = new int[64];
         this.querySize = 0;
     }
 
@@ -59,6 +59,7 @@ public class SpatialHashTable {
     }
 
     public void create(float[] posX, float[] posY) {
+        this.queryIds = new int[64];
         int numParticles = posX.length;
 
         // reset everything
@@ -103,6 +104,10 @@ public class SpatialHashTable {
                 int end = this.cellStart[hash + 1];
 
                 for (int i = start; i < end; i++) {
+                    // if the queries are greater than initial size increase the size
+                    if (this.querySize >= this.queryIds.length) {
+                        this.queryIds = Arrays.copyOf(this.queryIds, this.queryIds.length * 2);
+                    }
                     this.queryIds[this.querySize] = this.cellEntries[i];
                     this.querySize++;
                 }
