@@ -22,6 +22,7 @@ public class Grid {
 
 
     private final int[] cellType;
+    private final int[] initialCellType;
 
     public static final int AIR = 0;
     public static final int FLUID = 1;
@@ -41,6 +42,8 @@ public class Grid {
         this.weightV = new float[numX * (numY + 1)];
 
         this.cellType = new int[numX * numY];
+        this.initialCellType = new int[numX * numY];
+
         this.invCellSize = 1.0f/cellSize;
         this.cellSize = cellSize;
 
@@ -154,9 +157,13 @@ public class Grid {
         }
     }
 
-    public void saveToOld() {
+    public void saveVelocitiesToOld() {
         System.arraycopy(h, 0, oldH, 0, h.length);
         System.arraycopy(v, 0, oldV, 0, v.length);
+    }
+
+    public void saveCellTypes() {
+        System.arraycopy(cellType, 0, initialCellType, 0, cellType.length);
     }
 
     public void clearCurrent() {
@@ -166,9 +173,11 @@ public class Grid {
         Arrays.fill(weightH, 0);
         Arrays.fill(weightV, 0);
 
-        Arrays.fill(cellType, 0);
+        System.arraycopy(initialCellType, 0, cellType, 0, cellType.length);        
 
     }
+
+    
 
 
 

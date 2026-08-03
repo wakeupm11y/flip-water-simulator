@@ -5,20 +5,16 @@ import com.mmahlatji.flipwatersim.HashTable.SpatialHashTable;
 import java.util.Arrays;
 
 public class Solver {
-    // private static final Vector2D GRAVITY = new Vector2D(0, 9.81f * 50f);
     private static final float GRAVITY = 9.81f * 50f;
     public static final float RADIUS = 1f; // make final for testing purposes, consider making it configurable
     private static final float MASS = 1f;
 
     private final SpatialHashTable table;
     private final Boundary boundary;
-    // private final Particle[] particles;
     private final float[] velocityX;
     private final float[] velocityY;
     private final float[] positionX;
     private final float[] positionY;
-    // private final float[] mass;
-    // private final float[] radius;  // we probably do not need this because we can just make it a constant for each particle
     private final Grid grid;
     private final float timestep;
     private final float overrelaxation;
@@ -41,8 +37,6 @@ public class Solver {
         final float timestep
     ) {
 
-
-        // this.particles = particles;
         this.grid      = grid;
         this.numParticles = numParticles;
         this.boundary  = boundary;
@@ -63,6 +57,9 @@ public class Solver {
             initX[i] = positionX[i];
             initY[i] = positionY[i];
         }
+
+        boundary.markBoundary(grid);
+        grid.saveCellTypes();
     }
 
     
@@ -78,12 +75,8 @@ public class Solver {
     }
 
     public void update() {
-
-        // for (Particle p : particles) {
-        //     Vector2D vel = p.getVelocity().add(GRAVITY.scale(timestep));
-        //     p.setVelocity(vel);
-        // }
-
+        
+        // multithread
         for (int i = 0; i < numParticles; i++) {
             velocityY[i] += GRAVITY * timestep;   
         }
@@ -95,11 +88,7 @@ public class Solver {
         solvePressure(relaxationIterations);
         gridToParticle();
 
-        // for (Particle p : particles) {
-        //     Vector2D pos = p.getPosition().add(p.getVelocity().scale( timestep));
-        //     p.setPosition(pos);
-        //     boundary.apply(p); // modify this so that it accepts coordinates, not a vector
-        // }
+        // multithread
         for (int i = 0; i < numParticles; i++) {
             positionX[i] += velocityX[i] * timestep;
             positionY[i] += velocityY[i] * timestep;
@@ -108,12 +97,15 @@ public class Solver {
     }
 
     private void particlesToGrid() {
-        grid.clearCurrent();
+        grid.clearCurrent(); 
 
         float cs = grid.getCellSize();
-        boundary.markBoundary(grid);
+
+        // boundary.markBoundary(grid); // find a way to do this once at the beginning and never again
+
         // 2. Mark fluid cells based on particle positions
-        for (int i = 0; i < numParticles; i++) {
+        // multithread this part, it doesnt matter if we have simultaneous celltype writes
+        for (int i = 0; i < numParticles; i++) { 
             float px = positionX[i];
             float py = positionY[i];
             int xi = (int) Math.floor(px / cs);
@@ -153,6 +145,7 @@ public class Solver {
             float w3 = (dx / cs) * (dy / cs);
             float w4 = (1 - dx / cs) * (dy / cs);
 
+            // synchronise this
             if (x0 >= 0 && x0 <= grid.getNumX() && y0 >= 0 && y0 < grid.getNumY()) {
                 grid.accumH(grid.horizontalIndex(x0, y0), w1 * vx);
                 grid.accumInfH(grid.horizontalIndex(x0, y0), w1);
@@ -207,7 +200,7 @@ public class Solver {
         }
 
         grid.normalise();
-        grid.saveToOld();
+        grid.saveVelocitiesToOld();
     }
 
     private void solvePressure(int iterations) {

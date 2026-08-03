@@ -35,8 +35,9 @@ public class Main {
             tankHeight, 
             res, 
             0.4f, // relWaterWidth (40% of box width)
-            0.6f  // relWaterHeight (80% of box height)
+            0.8f  // relWaterHeight (80% of box height)
         );
+        System.out.printf("Generated %d particles", setup.numParticles);
 
         // 3. Offset Particle Coordinates by Boundary Origin (minX, minY)
         // This aligns particle position coordinates with the BoxBoundary's world space offset
@@ -62,7 +63,7 @@ public class Main {
 
         // 4. Launch GUI on the Event Dispatch Thread
         SwingUtilities.invokeLater(() -> {
-            JFrame frame = new JFrame("FLIP Fluid Simulation");
+            JFrame frame = new JFrame("FLIP Water Simulation");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
             SimulationPanel panel = new SimulationPanel(solver,

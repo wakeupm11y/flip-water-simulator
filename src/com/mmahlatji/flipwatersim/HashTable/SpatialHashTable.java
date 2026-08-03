@@ -103,6 +103,7 @@ public class SpatialHashTable {
                 int start = this.cellStart[hash];
                 int end = this.cellStart[hash + 1];
 
+                // i can synchronise this and make querysize an atomic integer for multithreading
                 for (int i = start; i < end; i++) {
                     // if the queries are greater than initial size increase the size
                     if (this.querySize >= this.queryIds.length) {
