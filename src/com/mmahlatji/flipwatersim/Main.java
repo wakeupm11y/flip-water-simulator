@@ -1,16 +1,17 @@
 package com.mmahlatji.flipwatersim;
-import com.mmahlatji.flipwatersim.Boundaries.Boundary;
-import com.mmahlatji.flipwatersim.Boundaries.BoxBoundary;
-import com.mmahlatji.flipwatersim.Factory.ParticleFactory;
-import com.mmahlatji.flipwatersim.Gui.SimulationPanel;
-import com.mmahlatji.flipwatersim.Solver.Grid;
-import com.mmahlatji.flipwatersim.Solver.Solver;
 import java.awt.Color;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
+
+import com.mmahlatji.flipwatersim.Boundaries.Boundary;
+import com.mmahlatji.flipwatersim.Boundaries.BoxBoundary;
+import com.mmahlatji.flipwatersim.Factory.ParticleFactory;
+import com.mmahlatji.flipwatersim.Gui.SimulationPanel;
+import com.mmahlatji.flipwatersim.Solver.Grid;
+import com.mmahlatji.flipwatersim.Solver.Solver;
 
 public class Main {
     
@@ -25,10 +26,9 @@ public class Main {
         Boundary boundary = new BoxBoundary(minX, minY, maxX, maxY, Color.BLACK, 0.0f);
 
         // 2. Grid & Particle Setup
-        int res = 100;
+        int res = 150;
         float tankHeight = maxY - minY;
         float tankWidth = maxX - minX;
-
         // Create particles strictly inside the boundary box
         ParticleFactory.ParticleSetup setup = ParticleFactory.createParticles(
             tankWidth, 
@@ -37,12 +37,12 @@ public class Main {
             0.4f, // relWaterWidth (40% of box width)
             0.8f  // relWaterHeight (80% of box height)
         );
-        System.out.printf("Generated %d particles", setup.numParticles);
+        System.out.printf("Generated %d particles.\n", setup.numParticles);
 
         // 3. Offset Particle Coordinates by Boundary Origin (minX, minY)
         // This aligns particle position coordinates with the BoxBoundary's world space offset
         for (int i = 0; i < setup.numParticles; i++) {
-            setup.posX[i] += minX;
+            setup.posX[i] += (maxX/2) - 200;
             setup.posY[i] += minY;
         }
 
@@ -56,7 +56,7 @@ public class Main {
             setup.posX,
             setup.posY,
             1.9f,            // overrelaxation
-            10,              // pressure iterations
+            60,              // pressure iterations
             2,               // push-apart iterations
             1.0f / 60.0f     // timestep dt
         );

@@ -1,13 +1,14 @@
 package com.mmahlatji.flipwatersim.Solver;
 
-import com.mmahlatji.flipwatersim.Boundaries.Boundary;
-import com.mmahlatji.flipwatersim.HashTable.SpatialHashTable;
 import java.util.Arrays;
 
+import com.mmahlatji.flipwatersim.Boundaries.Boundary;
+import com.mmahlatji.flipwatersim.HashTable.SpatialHashTable;
+
 public class Solver {
-    private static final float GRAVITY = 9.81f * 50f;
+    public static float GRAVITY = 9.81f * 100;
     public static final float RADIUS = 1f; // make final for testing purposes, consider making it configurable
-    private static final float MASS = 1f;
+    // private static final float MASS = 1f;
 
     private final SpatialHashTable table;
     private final Boundary boundary;
@@ -77,16 +78,44 @@ public class Solver {
     public void update() {
         
         // multithread
+        // long t1 = System.nanoTime();
         for (int i = 0; i < numParticles; i++) {
             velocityY[i] += GRAVITY * timestep;   
         }
-        
+        // System.out.println("Velocity time (ms): " + (System.nanoTime() - t1));
+        // t1 = System.nanoTime();
         table.create(positionX, positionY);
 
+        // System.out.println("Table Create time (ms): " + (System.nanoTime() - t1));
+
+        // t1 = System.nanoTime();
+
         pushParticlesApart(pushApartIterations);
+
+        for (int i = 0; i < numParticles; i++) {
+            boundary.apply(positionX, positionY, velocityX, velocityY, i);
+        }
+
+        // System.out.println("Push apart time (ms): " + (System.nanoTime() - t1));
+
+        // t1 = System.nanoTime();
+
         particlesToGrid();
+
+        // System.out.println("To grid time (ms): " + (System.nanoTime() - t1));
+
+        // t1 = System.nanoTime();
+
         solvePressure(relaxationIterations);
+
+        // System.out.println("Pressure time (ms): " + (System.nanoTime() - t1));
+        // t1 = System.nanoTime();
+
         gridToParticle();
+
+        // System.out.println("To particle time (ms): " + (System.nanoTime() - t1));
+
+        // t1 = System.nanoTime();
 
         // multithread
         for (int i = 0; i < numParticles; i++) {
@@ -94,14 +123,16 @@ public class Solver {
             positionY[i] += velocityY[i] * timestep;
             boundary.apply(positionX, positionY, velocityX, velocityY, i);
         }
+        
+        // System.out.println("Position time (ms): " + (System.nanoTime() - t1));
+
+        // System.exit(0);
     }
 
     private void particlesToGrid() {
         grid.clearCurrent(); 
 
         float cs = grid.getCellSize();
-
-        // boundary.markBoundary(grid); // find a way to do this once at the beginning and never again
 
         // 2. Mark fluid cells based on particle positions
         // multithread this part, it doesnt matter if we have simultaneous celltype writes
@@ -340,13 +371,15 @@ public class Solver {
 
     private void pushParticlesApart(int iterations) {
         float minDist = RADIUS * 2f; 
-
+        float minDist2 = minDist * minDist;
+        
         for (int z = 0; z < iterations; z++) {
             for (int i = 0; i < numParticles; i++) {
                 // outer particle
                 float pXi = positionX[i];
                 float pYi = positionY[i];
-                table.query(pXi, pYi, (int) (minDist + 0.01f));
+
+                table.query(pXi, pYi, (minDist + 0.01f));
 
                 int[] queries = table.getQueryIds();
                 for (int q = 0; q < table.getQuerySize(); q++) {
@@ -357,22 +390,27 @@ public class Solver {
                     float pXj = positionX[j];
                     float pYj = positionY[j];
                     
-                    float distance = (float) Math.sqrt(Math.pow(pXj - pXi, 2) + Math.pow(pYj - pYi, 2));
+                    float dx = pXj - pXi;
+                    float dy = pYj - pYi;
 
-                    if (distance >= minDist || distance == 0) continue;
+                    float dist2 = dx * dx + dy * dy;
 
-                    if (distance < minDist) {
-                        float dx = pXi - pXj;
-                        float dy = pYi - pYj;
-                        float delta = 0.5f * (minDist - distance) / distance;
-                        float correctX = dx * delta;
-                        float correctY = dy * delta;
+                    if (dist2 >= minDist2 || dist2 == 0f) continue;
 
-                        positionX[i] += correctX;
-                        positionY[i] += correctY;
-                        positionX[j] -= correctX;
-                        positionY[j] -= correctY;
-                    }   
+                    float distance = (float) Math.sqrt(dist2);
+                    float delta = 0.5f * (minDist - distance) / distance;
+                    float correctX = -dx * delta;
+                    float correctY = -dy * delta;
+
+                    positionX[i] += correctX;
+                    positionY[i] += correctY;
+                    boundary.apply(positionX, positionY, velocityX, velocityY, i);
+
+                    positionX[j] -= correctX;
+                    positionY[j] -= correctY;
+                    boundary.apply(positionX, positionY, velocityX, velocityY, j);
+
+                      
                 }
             }
         }

@@ -1,30 +1,33 @@
 package com.mmahlatji.flipwatersim.Gui;
 
-import com.mmahlatji.flipwatersim.Boundaries.*;
-import com.mmahlatji.flipwatersim.Solver.Solver;
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Dimension;
 import java.awt.event.KeyAdapter;
-import java.awt.Font;
-import java.awt.RenderingHints;
+import java.awt.event.KeyEvent;
+
 import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
+import javax.swing.Timer;
+
+import com.mmahlatji.flipwatersim.Solver.Solver;
 
 
 
-public class SimulationPanel extends JPanel implements Runnable {
+public class SimulationPanel extends JPanel { 
 
     private final Solver solver;
     private final float minX, minY, maxX, maxY;
-    private volatile boolean running = true;
+  
     private int fps = 0;
     private int frameCount = 0;
     private long lastFpsUpdate = 0;
-    private Thread simThread;
-    private static final int TARGET_FPS = 60;
+    
+    private static final int TARGET_FPS = 30;
+    private static final int DELAY_MS = 1000 / TARGET_FPS;
+    private Timer timer;
 
     public SimulationPanel(
         Solver solver,
@@ -41,49 +44,38 @@ public class SimulationPanel extends JPanel implements Runnable {
         setPreferredSize(new Dimension(800, 600));
         setBackground(Color.WHITE);
         setFocusable(true);
-
-        // Optional: press SPACE to pause/resume (you can implement later)
-        addKeyListener(new KeyAdapter() {});
+        // Press space bar to pause the simulation
+        addKeyListener(new KeyAdapter() {
+            @Override 
+            public void keyPressed(KeyEvent e) {
+                int keyCode = e.getKeyCode();
+                if (timer.isRunning() && keyCode == KeyEvent.VK_SPACE) {
+                    timer.stop();
+                } else if (!timer.isRunning() && keyCode == KeyEvent.VK_SPACE){
+                    timer.start();
+                } else if (keyCode == KeyEvent.VK_BACK_SPACE) {
+                    solver.reset();
+                    repaint();
+                } else if (timer.isRunning() && keyCode == KeyEvent.VK_CAPS_LOCK) {
+                    Solver.GRAVITY = -Solver.GRAVITY;
+                }
+            }
+        });
     }
 
     public void start() {
-        simThread = new Thread(this);
-        simThread.start();
-    }
-
-    public void stop() {
-        running = false;
-        if (simThread != null) {
-            try {
-                simThread.join();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
+        if (timer == null || !timer.isRunning()) {
+            timer = new Timer(DELAY_MS, e -> {
+                solver.update();
+                repaint();
+            });
+            timer.start();
         }
     }
 
-    @Override
-    public void run() {
-        while (running) {
-            long frameStart = System.nanoTime();
-
-            // Advance simulation by one timestep
-            solver.update();
-
-            // Schedule repaint on the Event Dispatch Thread
-            SwingUtilities.invokeLater(this::repaint);
-
-            // Frame rate limiting
-            long elapsed = System.nanoTime() - frameStart;
-            long targetTime = 1_000_000_000L / TARGET_FPS;
-            if (elapsed < targetTime) {
-                try {
-                    long sleepMs = (targetTime - elapsed) / 1_000_000;
-                    if (sleepMs > 0) Thread.sleep(sleepMs);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            }
+    public void stop() {
+        if (timer != null && timer.isRunning()) {
+            timer.stop();
         }
     }
 
@@ -91,8 +83,8 @@ public class SimulationPanel extends JPanel implements Runnable {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g;
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                            RenderingHints.VALUE_ANTIALIAS_ON);
+        // g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+        //                     RenderingHints.VALUE_ANTIALIAS_ON);
 
         int panelWidth = getWidth();
         int panelHeight = getHeight();

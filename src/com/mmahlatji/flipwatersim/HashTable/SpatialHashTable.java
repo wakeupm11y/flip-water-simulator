@@ -88,7 +88,7 @@ public class SpatialHashTable {
         }
     }
 
-    public void query(float posX, float posY, int maxDist) {
+    public void query(float posX, float posY, float maxDist) {
         int x0 = intCoords(posX - maxDist);
         int y0 = intCoords(posY- maxDist);
 
